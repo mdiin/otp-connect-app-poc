@@ -1,0 +1,17 @@
+<html>
+
+<head>
+  <title>Express</title>
+  <link rel="stylesheet" href="/stylesheets/style.css">
+  <script src="https://unpkg.com/htmx.org@1.8.6"></script>
+</head>
+
+<body>
+  <h1>Express</h1>
+  <p>Welcome to Express</p>
+  <form method="post" hx-post="/initiate/CC123" hx-swap="outerHTML" action="/initiate/CC123">
+    <input type="submit" name="Initiate CC123" value="Initiate CC123" />
+  </form>
+</body>
+
+</html>
