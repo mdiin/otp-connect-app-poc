@@ -1,0 +1,94 @@
+= OTP
+
+This is a very rough POC of using a QR code to authenticate an app towards an
+API, without requiring the user of the app to have an account with the backend.
+
+== Why?
+
+Imagine a situation where you have a manager role who hands out e.g. inventory
+counting tasks to employees on the shop floor. The task is performed on a mobile
+device, but the store does not have a device for each shop floor employee.
+
+This means two things:
+
+1. After completing a task a worker always needs to return the device back to the
+manager's desk
+2. Shop floor employees do not necessarily have a username to log in with
+
+This POC demonstrates one way of allowing any shop floor worker to use any store
+device to do the exact inventory count that the manager assigns to that worker,
+without requiring a login, without the risk of performing unrelated actions in the
+backend, and allowing the app used by the shop floor workers to be as minimal as
+possible.
+
+== Structure
+
+There are two pieces in this repo:
+
+* A small Express.js server to act as the manager's frontend and data storage
+* A small ReactNative app to act as the shop floor worker's interaction with a task
+
+== Quickstart
+
+You will need to start the server and ReactNative applications in separate
+terminals, and the mobile device on which you install the ReactNative app should
+be connected to your computer (or running on the same network might be enough,
+not sure).
+
+=== Start the server
+
+In one terminal start the server:
+
+[,bash]
+----
+cd server
+npm install
+npm run start
+----
+
+You now have a server running on http://localhost:3000[localhost:3000] with some dummy data.
+
+=== Start the app
+
+In another terminal start the app:
+
+[,bash]
+----
+cd app/otp-connect-poc
+npx expo run:ios --device # or run:android if you prefer
+----
+
+This will open an app on your connected device which is ready to scan a QR code.
+Grant it permission to access the camera.
+
+=== Test the flow
+
+Now you are ready to test out the flow. Imagine you are both manager and shop
+floor worker for this to make any sense. ;-)
+
+1. Go to localhost:3000[localhost:3000] and press "Initiate CC123"
+  * This will associate a one-time code with the data of id CC123 in the datastore
+2. Pick up your device and point the camera at the QR code
+  * This will switch extract data ID and associated one-time code from the QR code
+  * These are used by the app to register itself as the handler of this task, which makes the server generate a long-lived access key and send it to the app
+  * The access key is used to request the data for the ID, and the view transitions
+3. Put in values for the three number inputs
+4. Press submit
+  * This will clear the app's state and switch it back to be ready for a new QR code
+  * It will also use the access key to send the updated data to the backend
+
+== How it works
+
+The backend server owns the data, the app is granted access to a very limited
+amount of data and/or operations for a limited time on request:
+
+1. Server generates OTP for a particular piece of data and encodes it as a QR code
+2. App reads the OTP and data ID from the QR code
+3. App registers with the backend using data ID and OTP
+4. Backend expires OTP and returns long-lived access key
+5. App makes requests towards the backend using access key
+6. App eventually submits data using access key
+7. Backend expires access key
+
+At any point you can call http://localhost:3000/debug[the debug endpoint] on the server
+to view the current state of the data store.
